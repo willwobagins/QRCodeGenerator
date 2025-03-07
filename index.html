@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR Code Generator</title>
+  <!-- Pustaka QRCodeStyling -->
+  <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* CSS Variables untuk tema kustom */
+    :root {
+      --dark-bg-color: #282c34;
+      --dark-text-color: #abb2bf;
+      --dark-header-bg: #21252b;
+
+      --light-bg-color: #f0f0f0;
+      --light-text-color: #333333;
+      --light-header-bg: #ffffff;
+    }
+
+    /* Animasi Transisi untuk QR Code */
+    .fade-in {
+      animation: fadeIn 0.5s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Tooltip Styles */
+    .tooltip {
+      margin-left: 4px;
+      cursor: pointer;
+      position: relative;
+      display: inline-block;
+      border-bottom: 1px dotted #abb2bf;
+    }
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 200px;
+      background-color: #21252b;
+      color: #fff;
+      text-align: left;
+      border-radius: 6px;
+      padding: 5px;
+      position: absolute;
+      z-index: 100;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -100px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* Dark Mode Styles: Elegan, Modern, dan Profesional */
+    .dark-mode {
+      background-color: var(--dark-bg-color);
+      color: var(--dark-text-color);
+      text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+    }
+    .dark-mode header {
+      background-color: var(--dark-header-bg);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    }
+    .dark-mode .bg-white {
+      background-color: #2c313c;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    }
+    .dark-mode .bg-gray-50,
+    .dark-mode .bg-gray-200 {
+      background-color: #2c313c;
+    }
+    .dark-mode .text-gray-700 {
+      color: #9da5b4;
+    }
+    .dark-mode input,
+    .dark-mode select {
+      background-color: var(--dark-input-bg, #3a3f4b);
+      color: var(--dark-text-color);
+      border: 1px solid #4b5263;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+    }
+    .dark-mode button {
+      background-color: var(--dark-input-bg, #3a3f4b);
+      color: var(--dark-text-color);
+      border: none;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .dark-mode button:hover {
+      background-color: #464b57;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.7);
+    }
+
+    /* Light Mode Custom (opsional bila diaktifkan) */
+    body.light-custom {
+      background-color: var(--light-bg-color);
+      color: var(--light-text-color);
+    }
+    header.light-custom {
+      background-color: var(--light-header-bg);
+    }
+
+    /* Notifikasi Inline */
+    .notification {
+      position: fixed;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      color: #fff;
+    }
+    .notification.show {
+      opacity: 1;
+    }
+
+    /* Modal Custom Tema */
+    #custom-theme-modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+    }
+    #custom-theme-modal.hidden {
+      display: none;
+    }
+    #custom-theme-modal .modal-content {
+      background-color: #fff;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      width: 300px;
+      position: relative;
+    }
+    /* Modal dalam mode dark */
+    .dark-mode #custom-theme-modal .modal-content {
+      background-color: #2c313c;
+      color: #abb2bf;
+    }
+    #custom-theme-modal .modal-close {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      font-size: 1.25rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-r from-blue-50 to-green-50 min-h-screen flex flex-col">
+  <!-- Header with Dark Mode Toggle dan Icon Custom Tema -->
+  <header class="bg-blue-700 shadow-lg flex items-center justify-between px-4 py-5">
+    <h1 class="text-center text-2xl font-extrabold text-white">QR Code Generator</h1>
+    <div class="flex items-center space-x-2">
+      <!-- Tombol custom tema (gear icon) -->
+      <button id="custom-theme-btn" aria-label="Custom Theme" class="bg-gray-200 p-2 rounded-full shadow-md hover:bg-gray-300 transition-colors duration-200">
+        <!-- Icon gear -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v.01M12 12v.01M12 18v.01M9 6h6M9 12h6M9 18h6"></path>
+        </svg>
+      </button>
+      <!-- Tombol dark mode -->
+      <button id="toggle-dark-mode" aria-label="Toggle dark mode" aria-pressed="false" class="bg-gray-200 p-2 rounded-full shadow-md hover:bg-gray-300 transition-colors duration-200">
+        <svg id="dark-mode-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M17.293 13.293a8 8 0 11-10.586-10.586 8.003 8.003 0 0010.586 10.586z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Notification Container -->
+
+  <!-- Main Content -->
+  <main class="flex-grow container mx-auto px-4 py-8">
+    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+      <div class="md:grid md:grid-cols-2 md:gap-6">
+        <!-- Form Section -->
+        <div class="p-6 space-y-6">
+          <div class="max-w-md mx-auto" id="form-container">
+            <!-- Pilihan Tipe Data dengan Tooltip -->
+            <div>
+              <label for="type" class="block text-gray-700 font-medium text-sm" title="Pilih jenis data untuk QR Code">
+                Pilih Jenis QR Code:
+                <span class="tooltip">?
+                  <span class="tooltiptext">Pilih jenis data yang akan diubah menjadi QR Code (Teks, URL, Email, vCard, WiFi, WhatsApp).</span>
+                </span>
+              </label>
+              <select id="type" onchange="toggleInputFields(); saveSettings();" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                <option value="text">Teks</option>
+                <option value="url">URL</option>
+                <option value="email">Email</option>
+                <option value="vcard">vCard</option>
+                <option value="wifi">WiFi</option>
+                <option value="whatsapp">WhatsApp</option>
+              </select>
+            </div>
+            <!-- Input untuk Teks/URL/Email -->
+            <div id="general-input">
+              <label for="text" class="block text-gray-700 font-medium text-sm" title="Masukkan teks, URL atau email">Masukkan Teks/URL/Email:</label>
+              <input type="text" id="text" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Contoh: https://example.com">
+            </div>
+            <!-- Input untuk vCard -->
+            <div id="vcard-input" class="hidden space-y-4">
+              <div>
+                <label for="vcard-name" class="block text-gray-700 font-medium text-sm" title="Nama lengkap untuk vCard">Nama Lengkap:</label>
+                <input type="text" id="vcard-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Contoh: John Doe">
+              </div>
+              <div>
+                <label for="vcard-phone" class="block text-gray-700 font-medium text-sm" title="Nomor telepon untuk vCard">Nomor Telepon:</label>
+                <input type="text" id="vcard-phone" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Contoh: +628123456789">
+              </div>
+              <div>
+                <label for="vcard-email" class="block text-gray-700 font-medium text-sm" title="Email untuk vCard">Email:</label>
+                <input type="email" id="vcard-email" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Contoh: email@example.com">
+              </div>
+            </div>
+            <!-- Input untuk WiFi -->
+            <div id="wifi-input" class="hidden space-y-4">
+              <div>
+                <label for="wifi-ssid" class="block text-gray-700 font-medium text-sm" title="Nama jaringan WiFi">Nama Jaringan (SSID):</label>
+                <input type="text" id="wifi-ssid" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Contoh: MyWiFi">
+              </div>
+              <div>
+                <label for="wifi-password" class="block text-gray-700 font-medium text-sm" title="Kata sandi WiFi">Kata Sandi:</label>
+                <input type="text" id="wifi-password" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Contoh: password123">
+              </div>
+              <div>
+                <label for="wifi-encryption" class="block text-gray-700 font-medium text-sm" title="Pilih tipe keamanan WiFi">Tipe Keamanan:</label>
+                <select id="wifi-encryption" onchange="saveSettings();" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                  <option value="WPA">WPA</option>
+                  <option value="WPA2">WPA2</option>
+                  <option value="WEP">WEP</option>
+                  <option value="nopass">None</option>
+                </select>
+              </div>
+            </div>
+            <!-- Input untuk WhatsApp -->
+            <div id="whatsapp-input" class="hidden">
+              <label for="whatsapp-number" class="block text-gray-700 font-medium text-sm" title="Masukkan nomor WhatsApp dengan kode negara">Nomor WhatsApp:</label>
+              <input type="text" id="whatsapp-number" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Contoh: +628123456789">
+            </div>
+            <!-- Pengaturan Level Error Correction -->
+            <div>
+              <label for="error-correction" class="block text-gray-700 font-medium text-sm" title="Pilih tingkat error correction">Pilih Level Error Correction:</label>
+              <select id="error-correction" onchange="saveSettings();" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                <option value="L">L (Low)</option>
+                <option value="M" selected>M (Medium)</option>
+                <option value="Q">Q (Quartile)</option>
+                <option value="H">H (High)</option>
+              </select>
+            </div>
+            <!-- Pilihan Warna QR -->
+            <div>
+              <label for="color" class="block text-gray-700 font-medium text-sm" title="Pilih warna QR Code">Pilih Warna QR:</label>
+              <input type="color" id="color" onchange="saveSettings();" class="mt-1 w-full h-8 p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <!-- Opsi Gradient -->
+            <div id="gradient-options" class="space-y-3">
+              <label class="flex items-center text-gray-700 font-medium text-sm" title="Aktifkan gradient untuk QR Code">
+                <input type="checkbox" id="use-gradient" onchange="toggleGradient(); saveSettings();" class="mr-2">
+                <span>Gunakan Gradient pada QR Code</span>
+              </label>
+              <div id="gradient-colors" class="hidden space-y-3 pl-6">
+                <div>
+                  <label for="gradient-start" class="block text-gray-700 font-medium text-sm" title="Pilih warna awal gradient">Warna Gradient Awal:</label>
+                  <input type="color" id="gradient-start" onchange="saveSettings();" class="mt-1 w-full h-8 p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                  <label for="gradient-end" class="block text-gray-700 font-medium text-sm" title="Pilih warna akhir gradient">Warna Gradient Akhir:</label>
+                  <input type="color" id="gradient-end" onchange="saveSettings();" class="mt-1 w-full h-8 p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                  <label for="gradient-type" class="block text-gray-700 font-medium text-sm" title="Pilih tipe gradient (linear atau radial)">Tipe Gradient:</label>
+                  <select id="gradient-type" onchange="saveSettings();" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    <option value="linear">Linear</option>
+                    <option value="radial">Radial</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <!-- Pilihan Bentuk Custom QR Code -->
+            <div>
+              <label for="bodyShape" class="block text-gray-700 font-medium text-sm" title="Pilih bentuk body QR Code">Pilih Bentuk Body (Dot):</label>
+              <select id="bodyShape" onchange="saveSettings();" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                <!-- Opsi akan di-generate secara dinamis -->
+              </select>
+            </div>
+            <div>
+              <label for="eyeFrameShape" class="block text-gray-700 font-medium text-sm" title="Pilih bentuk frame mata QR Code">Pilih Bentuk Eye Frame:</label>
+              <select id="eyeFrameShape" onchange="saveSettings();" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                <!-- Opsi akan di-generate secara dinamis -->
+              </select>
+            </div>
+            <div>
+              <label for="eyeBallShape" class="block text-gray-700 font-medium text-sm" title="Pilih bentuk pupil mata QR Code">Pilih Bentuk Eye Ball:</label>
+              <select id="eyeBallShape" onchange="saveSettings();" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                <!-- Opsi akan di-generate secara dinamis -->
+              </select>
+            </div>
+            <!-- Input untuk Logo -->
+            <div>
+              <label for="logo" class="block text-gray-700 font-medium text-sm" title="Unggah logo untuk disematkan pada QR Code (opsional)">Masukkan Logo (Opsional):</label>
+              <input type="file" id="logo" accept="image/*" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <!-- Format Download -->
+            <div>
+              <label for="download-format" class="block text-gray-700 font-medium text-sm" title="Pilih format file untuk download QR Code">
+                Format Download:
+                <span class="tooltip">?
+                  <span class="tooltiptext">Pilih format file untuk QR Code. Opsi tersedia: PNG dan SVG.</span>
+                </span>
+              </label>
+              <select id="download-format" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                <option value="png" selected>PNG</option>
+                <option value="svg">SVG</option>
+              </select>
+            </div>
+            <!-- Tombol Generate, Download, Reset, dan Share -->
+            <div class="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0 pt-4">
+              <button onclick="generateQR();" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors duration-200 text-sm">
+                Generate QR Code
+              </button>
+              <button onclick="downloadQR();" class="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition-colors duration-200 text-sm">
+                Download QR
+              </button>
+              <button onclick="resetForm();" class="w-full bg-red-600 text-white py-2 rounded-md hover:bg-red-700 transition-colors duration-200 text-sm">
+                Reset Form
+              </button>
+              <button onclick="copyQRUrl();" class="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 transition-colors duration-200 text-sm">
+                Copy QR URL
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- Preview QR Code Section -->
+        <div class="p-6 flex items-center justify-center bg-gray-50 border-t md:border-t-0 md:border-l border-gray-200">
+          <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-lg text-center">
+            <div id="qrcode" class="w-56 h-56 flex items-center justify-center mx-auto"></div>
+            <h2 class="mt-4 text-base font-semibold text-gray-700">Preview QR Code</h2>
+            <p class="mt-2 text-gray-500 text-xs">Scan dengan ponsel Anda untuk melihat data yang dihasilkan.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Custom Tema -->
+  <div id="custom-theme-modal" class="hidden">
+    <div class="modal-content">
+      <span class="modal-close" onclick="toggleCustomThemeModal()" aria-label="Close">&times;</span>
+      <h3 class="text-lg font-bold mb-4">Custom Theme</h3>
+      <label class="block mb-2">Pilih Mode untuk Custom:</label>
+      <select id="custom-mode-select" class="w-full p-2 border border-gray-300 rounded focus:outline-none mb-4">
+        <option value="dark">Dark Mode</option>
+        <option value="light">Light Mode</option>
+      </select>
+      <div id="custom-theme-options">
+        <!-- Input akan diisi secara dinamis berdasarkan mode yang dipilih -->
+      </div>
+      <button onclick="applyCustomThemeFromModal()" class="mt-4 w-full bg-blue-600 text-white py-2 rounded">Terapkan Tema</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-200">
+    <div class="container mx-auto px-4 py-4">
+      <p class="text-center text-gray-700 text-xs">Dikembangkan oleh [Teguh Tri Wibowo]</p>
+    </div>
+  </footer>
+
+  <script>
+    let qrCodeInstance;
+
+    // Fungsi Debounce: Menunda eksekusi fungsi sampai setelah periode idle
+    function debounce(func, wait) {
+      let timeout;
+      return function() {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, arguments), wait);
+      };
+    }
+
+    // Fungsi untuk menampilkan notifikasi (error atau sukses)
+    function showNotification(message, type = "error") {
+      const notification = document.createElement("div");
+      notification.className = "notification";
+      notification.setAttribute("role", "alert");
+      if (type === "error") {
+        notification.style.backgroundColor = "rgba(220,38,38,0.9)";
+      } else if (type === "success") {
+        notification.style.backgroundColor = "rgba(16,185,129,0.9)";
+      }
+      notification.innerText = message;
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.classList.add("show");
+      }, 10);
+      setTimeout(() => {
+        notification.classList.remove("show");
+        setTimeout(() => {
+          document.body.removeChild(notification);
+        }, 500);
+      }, 3000);
+    }
+
+    // Fungsi helper validasi data
+    function generateGeneralData(type, suppressAlerts = false) {
+      let data = document.getElementById('text').value.trim();
+      if (!data) {
+        if (!suppressAlerts) showNotification("Input tidak boleh kosong!", "error");
+        return null;
+      }
+      if (type === 'url') {
+        if (!data.startsWith('http://') && !data.startsWith('https://')) {
+          data = 'https://' + data;
+        }
+        try {
+          new URL(data);
+        } catch (error) {
+          if (!suppressAlerts) showNotification("URL tidak valid!", "error");
+          return null;
+        }
+      } else if (type === 'email') {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(data)) {
+          if (!suppressAlerts) showNotification("Masukkan email yang valid!", "error");
+          return null;
+        }
+        data = `mailto:${data}`;
+      }
+      return data;
+    }
+
+    function generateWhatsAppData(suppressAlerts = false) {
+      let number = document.getElementById('whatsapp-number').value.trim().replace(/\D/g, '');
+      if (!number || !/^62\d{9,13}$/.test(number)) {
+        if (!suppressAlerts) showNotification('Nomor WhatsApp harus valid dan dimulai dengan kode negara +62!', "error");
+        return null;
+      }
+      return `https://wa.me/${number}`;
+    }
+
+    function generateVCardData(suppressAlerts = false) {
+      const name = document.getElementById('vcard-name').value.trim();
+      const phone = document.getElementById('vcard-phone').value.trim();
+      const email = document.getElementById('vcard-email').value.trim();
+      if (!name || !phone || !email) {
+        if (!suppressAlerts) showNotification("Semua field vCard harus diisi!", "error");
+        return null;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        if (!suppressAlerts) showNotification("Masukkan email yang valid untuk vCard!", "error");
+        return null;
+      }
+      return `BEGIN:VCARD
+VERSION:3.0
+FN:${name}
+TEL:${phone}
+EMAIL:${email}
+END:VCARD`;
+    }
+
+    function generateWiFiData(suppressAlerts = false) {
+      const ssid = document.getElementById('wifi-ssid').value.trim();
+      const password = document.getElementById('wifi-password').value.trim();
+      const encryption = document.getElementById('wifi-encryption').value;
+      if (!ssid) {
+        if (!suppressAlerts) showNotification("SSID tidak boleh kosong!", "error");
+        return null;
+      }
+      if (encryption !== 'nopass' && !password) {
+        if (!suppressAlerts) showNotification("Kata Sandi WiFi tidak boleh kosong!", "error");
+        return null;
+      }
+      return `WIFI:T:${encryption};S:${ssid};P:${password};;`;
+    }
+
+    // Fungsi generateQR dengan debouncing untuk update live
+    function generateQR(suppressAlerts = false) {
+      const type = document.getElementById('type').value;
+      let qrData = "";
+      
+      if (type === 'text' || type === 'url' || type === 'email') {
+        qrData = generateGeneralData(type, suppressAlerts);
+        if (!qrData) return;
+      } else if (type === 'whatsapp') {
+        qrData = generateWhatsAppData(suppressAlerts);
+        if (!qrData) return;
+      } else if (type === 'vcard') {
+        qrData = generateVCardData(suppressAlerts);
+        if (!qrData) return;
+      } else if (type === 'wifi') {
+        qrData = generateWiFiData(suppressAlerts);
+        if (!qrData) return;
+      }
+  
+      const errorCorrection = document.getElementById('error-correction').value;
+      const size = 180;
+      const margin = 0;
+      const bodyShape = document.getElementById('bodyShape').value;
+      const eyeFrameShape = document.getElementById('eyeFrameShape').value;
+      const eyeBallShape = document.getElementById('eyeBallShape').value;
+      const color = document.getElementById('color').value;
+  
+      const qrConfig = {
+        width: size,
+        height: size,
+        margin: margin,
+        data: qrData,
+        qrOptions: {
+          errorCorrectionLevel: errorCorrection
+        },
+        dotsOptions: {
+          color: color,
+          type: bodyShape
+        },
+        cornersSquareOptions: {
+          type: eyeFrameShape
+        },
+        cornersDotOptions: {
+          type: eyeBallShape
+        },
+        backgroundOptions: {
+          color: "#ffffff"
+        }
+      };
+
+      if (document.getElementById('use-gradient').checked) {
+        const gradientStart = document.getElementById('gradient-start').value;
+        const gradientEnd = document.getElementById('gradient-end').value;
+        const gradientType = document.getElementById('gradient-type').value;
+        qrConfig.dotsOptions.gradient = {
+          type: gradientType,
+          rotation: 0,
+          colorStops: [
+            { offset: 0, color: gradientStart },
+            { offset: 1, color: gradientEnd }
+          ]
+        };
+      }
+  
+      const logoInput = document.getElementById("logo");
+      const file = logoInput.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onerror = function() {
+          if (!suppressAlerts) showNotification("Error membaca file logo!", "error");
+        };
+        reader.onload = function(event) {
+          qrConfig.image = event.target.result;
+          qrConfig.imageOptions = {
+            crossOrigin: "anonymous",
+            margin: 2,
+            imageSize: 0.4
+          };
+          createQRCodeInstance(qrConfig);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        createQRCodeInstance(qrConfig);
+      }
+    }
+  
+    function createQRCodeInstance(config) {
+      const qrContainer = document.getElementById('qrcode');
+      qrContainer.innerHTML = '<p class="text-gray-500 text-xs">Generating...</p>';
+      qrCodeInstance = new QRCodeStyling(config);
+      qrContainer.innerHTML = '';
+      qrCodeInstance.append(qrContainer);
+      qrContainer.classList.add("fade-in");
+      setTimeout(() => { qrContainer.classList.remove("fade-in"); }, 500);
+    }
+
+    async function downloadQR() {
+      if (!qrCodeInstance) {
+        showNotification("Silakan generate QR Code terlebih dahulu!", "error");
+        return;
+      }
+      const format = document.getElementById('download-format').value;
+      const dataUrl = await qrCodeInstance.getDataUrl(format);
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = "qrcode." + format;
+      link.click();
+    }
+  
+    async function copyQRUrl() {
+      if (!qrCodeInstance) {
+        showNotification("Silakan generate QR Code terlebih dahulu!", "error");
+        return;
+      }
+      const dataUrl = await qrCodeInstance.getDataUrl();
+      try {
+        await navigator.clipboard.writeText(dataUrl);
+        showNotification("QR Code URL berhasil disalin ke clipboard!", "success");
+      } catch (err) {
+        showNotification("Gagal menyalin QR Code URL.", "error");
+      }
+    }
+  
+    document.addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        generateQR();
+      }
+    });
+
+    // Dark Mode Toggle
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+      const darkModeIcon = document.getElementById("dark-mode-icon");
+      const darkModeToggle = document.getElementById("toggle-dark-mode");
+      if(document.body.classList.contains("dark-mode")) {
+        darkModeIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 15a5 5 0 100-10 5 5 0 000 10z"/>
+          <path d="M10 1v2m0 14v2m9-9h-2M3 10H1m15.364 4.364l-1.414-1.414M5.05 5.05L3.636 3.636m12.728 0l-1.414 1.414M5.05 14.95l-1.414 1.414"/>
+        </svg>`;
+      } else {
+        darkModeIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M17.293 13.293a8 8 0 11-10.586-10.586 8.003 8.003 0 0010.586 10.586z"/>
+        </svg>`;
+      }
+      darkModeToggle.setAttribute("aria-pressed", document.body.classList.contains("dark-mode"));
+    }
+
+    // Toggle Modal Custom Tema
+    function toggleCustomThemeModal() {
+      const modal = document.getElementById("custom-theme-modal");
+      modal.classList.toggle("hidden");
+      // Saat modal muncul, perbarui opsi input berdasarkan pilihan default di modal
+      updateCustomThemeOptions();
+    }
+
+    // Update opsi input di dalam modal sesuai pilihan mode (dark/light)
+    function updateCustomThemeOptions() {
+      const mode = document.getElementById("custom-mode-select").value;
+      const optionsDiv = document.getElementById("custom-theme-options");
+      let html = "";
+      if(mode === "dark") {
+        html += `<label class="block mb-1 text-gray-700 dark:text-gray-200">Warna Latar (Dark Mode):</label>
+                 <input type="color" id="modal-dark-bg" value="${getComputedStyle(document.documentElement).getPropertyValue('--dark-bg-color') || '#282c34'}" class="w-full p-1 mb-2 border border-gray-300 rounded">
+                 <label class="block mb-1 text-gray-700 dark:text-gray-200">Warna Teks (Dark Mode):</label>
+                 <input type="color" id="modal-dark-text" value="${getComputedStyle(document.documentElement).getPropertyValue('--dark-text-color') || '#abb2bf'}" class="w-full p-1 mb-2 border border-gray-300 rounded">
+                 <label class="block mb-1 text-gray-700 dark:text-gray-200">Warna Header (Dark Mode):</label>
+                 <input type="color" id="modal-dark-header" value="${getComputedStyle(document.documentElement).getPropertyValue('--dark-header-bg') || '#21252b'}" class="w-full p-1 border border-gray-300 rounded">`;
+      } else if(mode === "light") {
+        html += `<label class="block mb-1 text-gray-700">Warna Latar (Light Mode):</label>
+                 <input type="color" id="modal-light-bg" value="${getComputedStyle(document.documentElement).getPropertyValue('--light-bg-color') || '#f0f0f0'}" class="w-full p-1 mb-2 border border-gray-300 rounded">
+                 <label class="block mb-1 text-gray-700">Warna Teks (Light Mode):</label>
+                 <input type="color" id="modal-light-text" value="${getComputedStyle(document.documentElement).getPropertyValue('--light-text-color') || '#333333'}" class="w-full p-1 mb-2 border border-gray-300 rounded">
+                 <label class="block mb-1 text-gray-700">Warna Header (Light Mode):</label>
+                 <input type="color" id="modal-light-header" value="${getComputedStyle(document.documentElement).getPropertyValue('--light-header-bg') || '#ffffff'}" class="w-full p-1 border border-gray-300 rounded">`;
+      }
+      optionsDiv.innerHTML = html;
+    }
+
+    // Fungsi untuk menerapkan tema dari modal custom
+    function applyCustomThemeFromModal() {
+      const mode = document.getElementById("custom-mode-select").value;
+      if(mode === "dark") {
+        const darkBg = document.getElementById("modal-dark-bg").value;
+        const darkText = document.getElementById("modal-dark-text").value;
+        const darkHeader = document.getElementById("modal-dark-header").value;
+        document.documentElement.style.setProperty('--dark-bg-color', darkBg);
+        document.documentElement.style.setProperty('--dark-text-color', darkText);
+        document.documentElement.style.setProperty('--dark-header-bg', darkHeader);
+        showNotification("Tema Dark Mode berhasil diterapkan!", "success");
+      } else if(mode === "light") {
+        const lightBg = document.getElementById("modal-light-bg").value;
+        const lightText = document.getElementById("modal-light-text").value;
+        const lightHeader = document.getElementById("modal-light-header").value;
+        document.documentElement.style.setProperty('--light-bg-color', lightBg);
+        document.documentElement.style.setProperty('--light-text-color', lightText);
+        document.documentElement.style.setProperty('--light-header-bg', lightHeader);
+        // Jika halaman dalam mode light, terapkan langsung
+        if(!document.body.classList.contains("dark-mode")) {
+          document.body.style.backgroundColor = lightBg;
+          document.body.style.color = lightText;
+          document.querySelector("header").style.backgroundColor = lightHeader;
+        }
+        showNotification("Tema Light Mode berhasil diterapkan!", "success");
+      }
+      toggleCustomThemeModal();
+    }
+
+    // Update opsi modal saat pilihan mode berubah
+    document.getElementById("custom-mode-select").addEventListener("change", updateCustomThemeOptions);
+
+    // Toggle input fields sesuai pilihan QR Code
+    function toggleInputFields() {
+      const type = document.getElementById("type").value;
+      const generalInput = document.getElementById("general-input");
+      const vcardInput = document.getElementById("vcard-input");
+      const wifiInput = document.getElementById("wifi-input");
+      const whatsappInput = document.getElementById("whatsapp-input");
+      generalInput.classList.add("hidden");
+      vcardInput.classList.add("hidden");
+      wifiInput.classList.add("hidden");
+      whatsappInput.classList.add("hidden");
+      if (type === "text" || type === "url" || type === "email") {
+        generalInput.classList.remove("hidden");
+      } else if (type === "vcard") {
+        vcardInput.classList.remove("hidden");
+      } else if (type === "wifi") {
+        wifiInput.classList.remove("hidden");
+      } else if (type === "whatsapp") {
+        whatsappInput.classList.remove("hidden");
+      }
+    }
+
+    // Event Listener dengan Debouncing untuk update live QR Code & penyimpanan pengaturan
+    document.addEventListener("DOMContentLoaded", () => {
+      populateSelect("bodyShape", bodyShapes);
+      populateSelect("eyeFrameShape", eyeFrameShapes);
+      populateSelect("eyeBallShape", eyeBallShapes);
+      const useGradient = document.getElementById("use-gradient");
+      const gradientColors = document.getElementById("gradient-colors");
+      useGradient.addEventListener("change", () => {
+        gradientColors.classList.toggle("hidden", !useGradient.checked);
+      });
+      const formContainer = document.getElementById('form-container');
+      const debouncedUpdate = debounce(() => { generateQR(true); saveSettings(); }, 500);
+      if (formContainer) {
+        formContainer.addEventListener("input", debouncedUpdate);
+        formContainer.addEventListener("change", debouncedUpdate);
+      }
+      loadSettings();
+      const darkModeToggle = document.getElementById('toggle-dark-mode');
+      darkModeToggle.addEventListener("click", toggleDarkMode);
+      // Event listener untuk tombol custom tema
+      document.getElementById("custom-theme-btn").addEventListener("click", toggleCustomThemeModal);
+    });
+
+    // Pengaturan Local Storage
+    function saveSettings() {
+      const settings = {
+        type: document.getElementById('type').value,
+        text: document.getElementById('text').value,
+        vcardName: document.getElementById('vcard-name').value,
+        vcardPhone: document.getElementById('vcard-phone').value,
+        vcardEmail: document.getElementById('vcard-email').value,
+        wifiSSID: document.getElementById('wifi-ssid').value,
+        wifiPassword: document.getElementById('wifi-password').value,
+        wifiEncryption: document.getElementById('wifi-encryption').value,
+        whatsappNumber: document.getElementById('whatsapp-number').value,
+        errorCorrection: document.getElementById('error-correction').value,
+        color: document.getElementById('color').value,
+        useGradient: document.getElementById('use-gradient').checked,
+        gradientStart: document.getElementById('gradient-start').value,
+        gradientEnd: document.getElementById('gradient-end').value,
+        gradientType: document.getElementById('gradient-type').value,
+        bodyShape: document.getElementById('bodyShape').value,
+        eyeFrameShape: document.getElementById('eyeFrameShape').value,
+        eyeBallShape: document.getElementById('eyeBallShape').value
+      };
+      localStorage.setItem('qrSettings', JSON.stringify(settings));
+    }
+
+    function loadSettings() {
+      const savedSettings = localStorage.getItem('qrSettings');
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        document.getElementById('type').value = settings.type || 'text';
+        document.getElementById('text').value = settings.text || '';
+        document.getElementById('vcard-name').value = settings.vcardName || '';
+        document.getElementById('vcard-phone').value = settings.vcardPhone || '';
+        document.getElementById('vcard-email').value = settings.vcardEmail || '';
+        document.getElementById('wifi-ssid').value = settings.wifiSSID || '';
+        document.getElementById('wifi-password').value = settings.wifiPassword || '';
+        document.getElementById('wifi-encryption').value = settings.wifiEncryption || 'WPA';
+        document.getElementById('whatsapp-number').value = settings.whatsappNumber || '';
+        document.getElementById('error-correction').value = settings.errorCorrection || 'M';
+        document.getElementById('color').value = settings.color || '#000000';
+        document.getElementById('use-gradient').checked = settings.useGradient || false;
+        if (settings.useGradient) {
+          document.getElementById('gradient-colors').classList.remove('hidden');
+        }
+        document.getElementById('gradient-start').value = settings.gradientStart || '#000000';
+        document.getElementById('gradient-end').value = settings.gradientEnd || '#000000';
+        document.getElementById('gradient-type').value = settings.gradientType || 'linear';
+        document.getElementById('bodyShape').value = settings.bodyShape || 'dots';
+        document.getElementById('eyeFrameShape').value = settings.eyeFrameShape || 'dot';
+        document.getElementById('eyeBallShape').value = settings.eyeBallShape || 'dot';
+        toggleInputFields();
+      }
+    }
+
+    // Array untuk opsi select
+    const bodyShapes = [
+      { value: 'dots', label: 'Dots' },
+      { value: 'rounded', label: 'Rounded' },
+      { value: 'classy', label: 'Classy' },
+      { value: 'classy-rounded', label: 'Classy Rounded' }
+    ];
+    const eyeFrameShapes = [
+      { value: 'dot', label: 'Dot' },
+      { value: 'square', label: 'Square' },
+      { value: 'extra-rounded', label: 'Extra Rounded' }
+    ];
+    const eyeBallShapes = [
+      { value: 'dot', label: 'Dot' },
+      { value: 'square', label: 'Square' },
+      { value: 'circle', label: 'Circle' }
+    ];
+    function populateSelect(selectId, optionsArray) {
+      const selectEl = document.getElementById(selectId);
+      selectEl.innerHTML = "";
+      optionsArray.forEach(opt => {
+        const option = document.createElement("option");
+        option.value = opt.value;
+        option.textContent = opt.label;
+        selectEl.appendChild(option);
+      });
+    }
+  </script>
+</body>
+</html>
