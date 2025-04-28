@@ -583,18 +583,18 @@ END:VCARD`;
       setTimeout(() => { qrContainer.classList.remove("fade-in"); }, 500);
     }
 
-    async function downloadQR() {
-      if (!qrCodeInstance) {
-        showNotification("Silakan generate QR Code terlebih dahulu!", "error");
-        return;
-      }
-      const format = document.getElementById('download-format').value;
-      const dataUrl = await qrCodeInstance.getDataUrl(format);
-      const link = document.createElement("a");
-      link.href = dataUrl;
-      link.download = "qrcode." + format;
-      link.click();
-    }
+    function downloadQR() {
+  if (!qrCodeInstance) {
+    showNotification("Silakan generate QR Code terlebih dahulu!", "error");
+    return;
+  }
+  const format = document.getElementById('download-format').value; // "png" atau "svg"
+  // gunakan method download bawaan library
+  qrCodeInstance.download({
+    name: "qrcode",      // nama file tanpa ekstensi
+    extension: format    // "png" atau "svg"
+  });
+}
   
     async function copyQRUrl() {
       if (!qrCodeInstance) {
